@@ -1,0 +1,64 @@
+name: Build and deploy ASP.Net Core app to Azure Web App - coopdav4finalbackend
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Build with dotnet
+        run: dotnet build ./backend/413Final.API.csproj --configuration Release
+
+      - name: Publish .NET Core app
+        run: dotnet publish ./backend/413Final.API.csproj -c Release -o publish_output
+
+      - name: Upload artifact for deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-backend
+          path: publish_output
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dotnet-backend
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_31B895E472A94F8D8E210CCF670118BA }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_64FC0708881D47C997236ECF7DC50B5A }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C3FEA308377F492296E381A15E0C27C0 }}
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'coopdav4finalbackend'
+          slot-name: 'Production'
+          package: .
