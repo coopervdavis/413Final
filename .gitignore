@@ -1,0 +1,14 @@
+# Build output
+bin/
+obj/
+
+# User-specific files
+.vscode/
+*.user
+*.suo
+
+# Runtime files
+*.db
+
+# Logs
+*.log
